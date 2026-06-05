@@ -1,6 +1,8 @@
-package server;
+package poc.server;
 
 import java.util.List;
+
+import poc.protocol.Chat.ChatMessage;
 
 public class HelloWorld {
 
@@ -12,6 +14,7 @@ public class HelloWorld {
             test("25");
         });
         thread.join();
+        ChatMessage.Builder builder = ChatMessage.newBuilder();
     }
 
     private static void test(Object obj) {

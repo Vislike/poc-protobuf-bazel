@@ -2,5 +2,19 @@
     "editor.codeActionsOnSave": {
         "source.organizeImports": "always"
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "java.project.sourcePaths": [
+        "java-server/src/main/java"
+    ],
+    "java.project.referencedLibraries": {
+        "include": [
+            "bazel-bin/protocol/libchat_proto-speed.jar",
+        ],
+        "sources": {
+            "bazel-bin/protocol/libchat_proto-speed.jar": "bazel-bin/protocol/chat_proto-speed-src.jar"
+        }
+    },
+    "java.project.resourceFilters": [
+        "bazel-.+"
+    ]
 }
