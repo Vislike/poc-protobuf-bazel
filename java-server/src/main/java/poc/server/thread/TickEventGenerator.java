@@ -11,18 +11,23 @@ import poc.server.util.Utils;
 
 public class TickEventGenerator implements AutoCloseable {
 
+    private final BlockingQueue<IEvent> queue;
+    private final long ms;
     private final ScheduledExecutorService executor;
 
     public TickEventGenerator(BlockingQueue<IEvent> queue, long ms) {
+        this.queue = queue;
+        this.ms = ms;
         executor = Executors
                 .newSingleThreadScheduledExecutor(Thread.ofVirtual().name("TickEventGeneratorThread").factory());
-        executor.scheduleAtFixedRate(eventGenerator(queue), ms, ms, TimeUnit.MILLISECONDS);
     }
 
-    private Runnable eventGenerator(BlockingQueue<IEvent> queue) {
-        return () -> {
-            queue.offer(new TickEvent(Utils.tickMs()));
-        };
+    public void start() {
+        executor.scheduleAtFixedRate(this::eventGenerator, ms, ms, TimeUnit.MILLISECONDS);
+    }
+
+    private void eventGenerator() {
+        queue.offer(new TickEvent(Utils.tickMs()));
     }
 
     @Override

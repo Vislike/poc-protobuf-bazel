@@ -24,7 +24,7 @@ public class JavaServerMain {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 server.shutdown();
-                if (!mainThread.join(Duration.ofSeconds(5))) {
+                if (!mainThread.join(Duration.ofSeconds(MAX_SHUTDOWN_SECONDS))) {
                     System.err.println("Server failed to shutdown within " + MAX_SHUTDOWN_SECONDS
                             + "s time limit... Hard exiting");
                 }

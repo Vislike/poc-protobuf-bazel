@@ -1,26 +1,28 @@
 package poc.server.thread;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import poc.server.JavaServerMain;
+import poc.server.event.ClientAddEvent;
 import poc.server.event.IEvent;
 import poc.server.event.ShutdownEvent;
 
 public class IncomingConnectionListener implements AutoCloseable {
 
-    private final BlockingQueue<IEvent> mainQueue;
-    private final Thread thread;
+    private final BlockingQueue<IEvent> queue;
     private final AtomicBoolean run = new AtomicBoolean(true);
 
+    private Thread thread;
+
     public IncomingConnectionListener(BlockingQueue<IEvent> queue) {
-        this.mainQueue = queue;
+        this.queue = queue;
+    }
+
+    public void start() {
         thread = Thread.ofVirtual().name("IncomingConnectionThread").start(this::handleIncomingConnection);
     }
 
@@ -33,14 +35,15 @@ public class IncomingConnectionListener implements AutoCloseable {
             System.out.println("Listening on " + address);
 
             while (run.getOpaque()) {
-                SocketChannel clientChannel = channel.accept();
-                RemoteClient remoteClient = new RemoteClient(clientChannel, mainQueue);
-                System.out.println("Client connected: " + clientChannel);
+                RemoteClient remoteClient = new RemoteClient(channel.accept(), queue);
+                System.out.println("Client connected: " + remoteClient);
+                remoteClient.start();
+                queue.put(new ClientAddEvent(remoteClient));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (run.getOpaque()) {
-                mainQueue.offer(new ShutdownEvent());
-                throw new UncheckedIOException(e);
+                queue.offer(new ShutdownEvent());
+                throw new AssertionError(e);
             }
         }
     }
