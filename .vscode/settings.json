@@ -4,11 +4,14 @@
     },
     "editor.formatOnSave": true,
     "java.project.sourcePaths": [
-        "java-server/src/main/java"
+        "java-server/src/main/java",
+        "java-client/src/main/java"
     ],
     "java.project.referencedLibraries": {
         "include": [
             "bazel-bin/protocol/libchat_proto-speed.jar",
+            "bazel-bin/external/protobuf+/java/core/libcore.jar",
+            "bazel-bin/external/protobuf+/java/core/liblite_runtime_only.jar"
         ],
         "sources": {
             "bazel-bin/protocol/libchat_proto-speed.jar": "bazel-bin/protocol/chat_proto-speed-src.jar"
