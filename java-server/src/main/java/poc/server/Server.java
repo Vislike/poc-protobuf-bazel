@@ -10,7 +10,7 @@ import poc.server.event.ClientRemoveEvent;
 import poc.server.event.IEvent;
 import poc.server.event.ShutdownEvent;
 import poc.server.event.TickEvent;
-import poc.server.event.UserDisconnectedEvent;
+import poc.server.event.UserOutgoingEvent;
 import poc.server.thread.IncomingConnectionListener;
 import poc.server.thread.RemoteClient;
 import poc.server.thread.TaskOffload;
@@ -96,7 +96,7 @@ public class Server implements AutoCloseable {
 
             // Close socket and notify others
             task.closeAsync(client);
-            sendToAllClients(new UserDisconnectedEvent(client.toString()), task);
+            sendToAllClients(new UserOutgoingEvent(client.toString()), task);
         } else if (assertRemoved != 0) {
             throw new AssertionError(assertRemoved);
         }

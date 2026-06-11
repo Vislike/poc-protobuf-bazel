@@ -2,20 +2,34 @@ syntax = "proto3";
 
 package poc.protocol;
 
+message Ping {}
+message Pong {}
+
+message User { string userName = 1; }
+
+message Hello { User user = 1; }
+
 message ChatMessage {
   string text = 1;
-  string channel_id = 2;
+  User user = 2;
 }
 
-message SystemMessage { string alert_level = 1; }
+message SystemMessage {
+  enum Type {
+    USER_CONNECTED = 0;
+    USER_DISCONNECTED = 1;
+  }
+
+  Type type = 1;
+  User user = 2;
+}
 
 message Message {
-  string message_id = 1;
-  int64 timestamp_utc = 2;
-  string sender_id = 3;
-
   oneof payload {
-    ChatMessage chat = 4;
-    SystemMessage system = 5;
+    ChatMessage chat = 1;
+    Hello hello = 2;
+    SystemMessage system = 3;
+    Ping ping = 4;
+    Pong pong = 5;
   }
 }

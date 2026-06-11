@@ -14,45 +14,37 @@ import poc.protocol.Chat.Message;
 import poc.server.JavaServerMain;
 import poc.server.event.ClientRemoveEvent;
 import poc.server.event.IEvent;
-import poc.server.event.UserDisconnectedEvent;
+import poc.server.event.UserIncomingEvent;
+import poc.server.event.UserOutgoingEvent;
 import poc.server.util.Utils;
 
 public class RemoteClient implements AutoCloseable {
 
+    // Internal states of running Threads
     private final String remoteAddress;
     private final SocketChannel channel;
     private final BlockingQueue<IEvent> mainQueue;
-    public final BlockingQueue<IEvent> clientQueue;
     private final AtomicLong lastMessage;
     private final AtomicBoolean run;
-
     private Thread receiveThread;
     private Thread sendThread;
+
+    // Owned by main event thread
+    public final BlockingQueue<IEvent> clientQueue;
+    public String userName;
 
     public RemoteClient(SocketChannel channel, BlockingQueue<IEvent> mainQueue) throws IOException {
         this.remoteAddress = channel.getRemoteAddress().toString();
         this.channel = channel;
         this.mainQueue = mainQueue;
-        this.clientQueue = new ArrayBlockingQueue<>(JavaServerMain.CLIENT_MESSAGE_QUEUE_SIZE);
         this.lastMessage = new AtomicLong(Utils.tickMs());
         this.run = new AtomicBoolean(true);
+        this.clientQueue = new ArrayBlockingQueue<>(JavaServerMain.CLIENT_MESSAGE_QUEUE_SIZE);
     }
 
     public void start() {
         receiveThread = Thread.ofVirtual().start(this::receiveThread);
         sendThread = Thread.ofVirtual().start(this::sendThread);
-    }
-
-    private void handleRemoteMessage(Message message) {
-        System.out.println(message);
-    }
-
-    private void handleLocalEvent(IEvent event) {
-        switch (event) {
-            case UserDisconnectedEvent e -> System.out.println("User Disconnected: " + e.userName());
-            default -> {
-            }
-        }
     }
 
     private void receiveThread() {
@@ -69,10 +61,11 @@ public class RemoteClient implements AutoCloseable {
                 // Update activity
                 lastMessage.setOpaque(Utils.tickMs());
 
-                // Decode
-                handleRemoteMessage(Message.parseFrom(msgBB.rewind()));
+                // Decode & Send to main event thread
+                Message message = Message.parseFrom(msgBB.rewind());
+                mainQueue.put(new UserIncomingEvent(this, message));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (run.getOpaque()) {
                 switch (e) {
                     case EOFException _ -> mainQueue.offer(new ClientRemoveEvent(this, "Client hung up"));
@@ -85,7 +78,11 @@ public class RemoteClient implements AutoCloseable {
     private void sendThread() {
         try {
             while (run.getOpaque()) {
-                handleLocalEvent(clientQueue.take());
+                IEvent event = clientQueue.take();
+                switch (event) {
+                    case UserOutgoingEvent e -> System.out.println("Outgoing: " + e);
+                    default -> System.err.println("Unknown event: " + event);
+                }
             }
         } catch (InterruptedException e) {
             if (run.getOpaque()) {
