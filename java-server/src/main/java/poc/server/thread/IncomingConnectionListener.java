@@ -34,6 +34,7 @@ public class IncomingConnectionListener implements AutoCloseable {
             channel.bind(address);
             System.out.println("Listening on " + address);
 
+            // Accept loop
             while (run.getOpaque()) {
                 RemoteClient remoteClient = new RemoteClient(channel.accept(), queue);
                 System.out.println("Client connected: " + remoteClient);

@@ -5,9 +5,13 @@ import java.time.Duration;
 public class JavaServerMain {
 
     public static final int SERVER_PORT = 5000;
-    public static final int MAIN_MESSAGE_QUEUE_SIZE = 128;
-    public static final int CLIENT_MESSAGE_QUEUE_SIZE = 16;
-    public static final int MAX_SHUTDOWN_SECONDS = 5;
+    public static final int SERVER_TICK_FREQUENCY_MS = 5000;
+    public static final int MAIN_MESSAGE_QUEUE_SIZE = 1024;
+    public static final int SHUTDOWN_SECONDS_MAX = 5;
+
+    public static final int CLIENT_MESSAGE_QUEUE_SIZE = 64;
+    public static final int CLIENT_PING_TIME_SECONDS = 5;
+    public static final int CLIENT_STALE_TIME_SECONDS = 10;
 
     public static void main(String[] args) throws Exception {
         try (Server server = new Server()) {
@@ -23,10 +27,13 @@ public class JavaServerMain {
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                server.shutdown();
-                if (!mainThread.join(Duration.ofSeconds(MAX_SHUTDOWN_SECONDS))) {
-                    System.err.println("Server failed to shutdown within " + MAX_SHUTDOWN_SECONDS
-                            + "s time limit... Hard exiting");
+                if (server.shutdown()) {
+                    if (!mainThread.join(Duration.ofSeconds(SHUTDOWN_SECONDS_MAX))) {
+                        System.err.println("Server failed to shutdown within " + SHUTDOWN_SECONDS_MAX
+                                + "s time limit... Hard exiting");
+                    }
+                } else {
+                    System.err.println("Server did not accept shutdown command... Hard exiting");
                 }
             } catch (InterruptedException e) {
                 throw new AssertionError("Unexpected interrupt", e);
