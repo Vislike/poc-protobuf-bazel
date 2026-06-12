@@ -15,6 +15,16 @@ public class AutoClient extends Client {
     public void start() throws IOException {
         Random random = new Random();
 
+        // Start delay
+        long startDelay = random.nextLong(10000);
+        Terminal.chatOther("Random start delay", String.valueOf(startDelay));
+        try {
+            Thread.sleep(startDelay);
+        } catch (InterruptedException e) {
+            // Defer interrupt to next
+            Thread.currentThread().interrupt();
+        }
+
         // Username
         String userName = "Anon " + random.nextInt(1, 1000);
 
