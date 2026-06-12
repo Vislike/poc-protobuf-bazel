@@ -28,10 +28,12 @@ public class RemoteClient implements AutoCloseable {
     private final AtomicBoolean run;
     private Thread receiveThread;
     private Thread sendThread;
+    private ByteBuffer sendLengthBB = ByteBuffer.allocate(2);
 
     // Owned by main event thread
     public final BlockingQueue<IEvent> clientQueue;
     public String userName;
+    public boolean active;
 
     public RemoteClient(SocketChannel channel, BlockingQueue<IEvent> mainQueue) throws IOException {
         this.remoteAddress = channel.getRemoteAddress().toString();
@@ -52,18 +54,20 @@ public class RemoteClient implements AutoCloseable {
             ByteBuffer lengthBB = ByteBuffer.allocate(2);
             while (run.getOpaque()) {
                 // Receive message length
-                readUntilEOF(lengthBB.clear());
+                socketReadUntilEOF(lengthBB.clear());
 
                 // Receive message
                 ByteBuffer msgBB = ByteBuffer.allocate(Short.toUnsignedInt(lengthBB.rewind().getShort()));
-                readUntilEOF(msgBB);
+                socketReadUntilEOF(msgBB);
 
                 // Update activity
                 lastMessage.setOpaque(Utils.tickMs());
 
-                // Decode & Send to main event thread
+                // Decode & Send to main event thread, ignore pong
                 Message message = Message.parseFrom(msgBB.rewind());
-                mainQueue.put(new UserIncomingEvent(this, message));
+                if (!message.hasPong()) {
+                    mainQueue.put(new UserIncomingEvent(this, message));
+                }
             }
         } catch (Exception e) {
             if (run.getOpaque()) {
@@ -80,18 +84,27 @@ public class RemoteClient implements AutoCloseable {
             while (run.getOpaque()) {
                 IEvent event = clientQueue.take();
                 switch (event) {
-                    case UserOutgoingEvent e -> System.out.println("Outgoing: " + e);
+                    case UserOutgoingEvent e -> socketSend(e.sharedBB().asReadOnlyBuffer());
                     default -> System.err.println("Unknown event: " + event);
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             if (run.getOpaque()) {
-                throw new AssertionError(e);
+                switch (e) {
+                    case IOException _ -> mainQueue.offer(new ClientRemoveEvent(this, "Client unreachable"));
+                    default -> throw new AssertionError(e);
+                }
             }
         }
     }
 
-    private void readUntilEOF(ByteBuffer bb) throws IOException {
+    private void socketSend(ByteBuffer bb) throws IOException {
+        sendLengthBB.clear().putShort((short) bb.capacity());
+        channel.write(sendLengthBB.rewind());
+        channel.write(bb);
+    }
+
+    private void socketReadUntilEOF(ByteBuffer bb) throws IOException {
         while (bb.hasRemaining()) {
             if (channel.read(bb) == -1) {
                 throw new EOFException();
@@ -119,6 +132,10 @@ public class RemoteClient implements AutoCloseable {
 
     @Override
     public String toString() {
-        return remoteAddress;
+        StringBuilder sb = new StringBuilder(remoteAddress);
+        if (userName != null) {
+            sb.append(" (").append(userName).append(")");
+        }
+        return sb.toString();
     }
 }

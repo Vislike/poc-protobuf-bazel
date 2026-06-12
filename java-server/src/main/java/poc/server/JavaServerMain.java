@@ -10,8 +10,8 @@ public class JavaServerMain {
     public static final int SHUTDOWN_SECONDS_MAX = 5;
 
     public static final int CLIENT_MESSAGE_QUEUE_SIZE = 64;
-    public static final int CLIENT_PING_TIME_SECONDS = 5;
-    public static final int CLIENT_STALE_TIME_SECONDS = 10;
+    public static final int CLIENT_PING_TIME_SECONDS = 10;
+    public static final int CLIENT_STALE_TIME_SECONDS = 20;
 
     public static void main(String[] args) throws Exception {
         try (Server server = new Server()) {

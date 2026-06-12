@@ -1,15 +1,18 @@
 package poc.server;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import poc.protocol.Chat.Message;
 import poc.server.event.ClientAddEvent;
 import poc.server.event.ClientRemoveEvent;
 import poc.server.event.IEvent;
 import poc.server.event.ShutdownEvent;
 import poc.server.event.TickEvent;
+import poc.server.event.UserIncomingEvent;
 import poc.server.event.UserOutgoingEvent;
 import poc.server.thread.IncomingConnectionListener;
 import poc.server.thread.RemoteClient;
@@ -52,6 +55,7 @@ public class Server implements AutoCloseable {
                     case ClientAddEvent e -> clients.add(e.client());
                     case ClientRemoveEvent e -> disconnectWithNotify(e, task);
                     case ShutdownEvent _ -> run = false;
+                    case UserIncomingEvent e -> chatEvent(e, task);
                     default -> System.err.println("Unknown event: " + event);
                 }
             }
@@ -60,21 +64,52 @@ public class Server implements AutoCloseable {
         }
     }
 
+    private void chatEvent(UserIncomingEvent event, TaskOffload task) {
+        Message message = event.message();
+        switch (message.getPayloadCase()) {
+            case HELLO -> {
+                event.client().active = true;
+                event.client().userName = message.getHello().getUser().getUserName();
+                sendToActiveClients(ChatProtocol.systemConnected(event.client().userName), task);
+            }
+            case CHAT -> {
+                sendToActiveClients(ChatProtocol.chat(message.getChat().getText(), event.client().userName), task);
+            }
+            default -> System.out.println("Unknown message: " + message);
+        }
+    }
+
     private void tick(TickEvent e, TaskOffload task) {
         System.out.println("Got tick: " + e);
 
-        // Remove stale
+        // Remove stale & ping old
         for (RemoteClient client : clients) {
             if (client.ageSeconds(JavaServerMain.CLIENT_STALE_TIME_SECONDS)) {
                 task.loopbackAsync(new ClientRemoveEvent(client, "Stale connection"));
+            } else if (client.ageSeconds(JavaServerMain.CLIENT_PING_TIME_SECONDS)) {
+                sendToClient(client, ChatProtocol.ping(), task);
             }
         }
     }
 
-    private void sendToAllClients(IEvent event, TaskOffload task) {
+    private void sendToClient(RemoteClient client, Message message, TaskOffload task) {
+        ByteBuffer bb = ByteBuffer.wrap(message.toByteArray());
+        UserOutgoingEvent event = new UserOutgoingEvent(bb);
+
+        if (!client.clientQueue.offer(event)) {
+            task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
+        }
+    }
+
+    private void sendToActiveClients(Message message, TaskOffload task) {
+        ByteBuffer bb = ByteBuffer.wrap(message.toByteArray());
+        UserOutgoingEvent event = new UserOutgoingEvent(bb);
+
         for (RemoteClient client : clients) {
-            if (!client.clientQueue.offer(event)) {
-                task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
+            if (client.active) {
+                if (!client.clientQueue.offer(event)) {
+                    task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
+                }
             }
         }
     }
@@ -96,7 +131,9 @@ public class Server implements AutoCloseable {
 
             // Close socket and notify others
             task.closeAsync(client);
-            sendToAllClients(new UserOutgoingEvent(client.toString()), task);
+            if (client.active) {
+                sendToActiveClients(ChatProtocol.systemDisconnected(client.userName), task);
+            }
         } else if (assertRemoved != 0) {
             throw new AssertionError(assertRemoved);
         }

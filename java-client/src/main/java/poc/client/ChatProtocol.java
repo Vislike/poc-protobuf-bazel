@@ -15,15 +15,19 @@ public class ChatProtocol {
         return builder.build();
     }
 
+    private static User.Builder user(String name) {
+        return User.newBuilder().setUserName(name);
+    }
+
+    public static Message pong() {
+        return message(b -> b.getPongBuilder());
+    }
+
     public static Message chat(String text) {
         return message(b -> b.getChatBuilder().setText(text));
     }
 
     public static Message hello(String name) {
         return message(b -> b.getHelloBuilder().setUser(user(name)));
-    }
-
-    private static User.Builder user(String name) {
-        return User.newBuilder().setUserName(name);
     }
 }

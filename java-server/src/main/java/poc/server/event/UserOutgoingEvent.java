@@ -1,4 +1,6 @@
 package poc.server.event;
 
-public record UserOutgoingEvent(String userName) implements IEvent {
+import java.nio.ByteBuffer;
+
+public record UserOutgoingEvent(ByteBuffer sharedBB) implements IEvent {
 }

@@ -18,5 +18,9 @@ public class Utils {
         public String wrap(String text) {
             return color + text + Color.RESET.color;
         }
+
+        public String highlight(String highlight, String normal) {
+            return color + highlight + Color.RESET.color + " " + normal;
+        }
     }
 }
