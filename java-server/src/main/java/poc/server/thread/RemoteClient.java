@@ -72,6 +72,7 @@ public class RemoteClient implements AutoCloseable {
             if (run.getOpaque()) {
                 switch (e) {
                     case EOFException _ -> mainQueue.offer(new ClientRemoveEvent(this, "Client hung up"));
+                    case IOException _ -> mainQueue.offer(new ClientRemoveEvent(this, e.getMessage()));
                     default -> throw new AssertionError(e);
                 }
             }
@@ -91,7 +92,7 @@ public class RemoteClient implements AutoCloseable {
         } catch (Exception e) {
             if (run.getOpaque()) {
                 switch (e) {
-                    case IOException _ -> mainQueue.offer(new ClientRemoveEvent(this, "Client unreachable"));
+                    case IOException _ -> mainQueue.offer(new ClientRemoveEvent(this, e.getMessage()));
                     default -> throw new AssertionError(e);
                 }
             }

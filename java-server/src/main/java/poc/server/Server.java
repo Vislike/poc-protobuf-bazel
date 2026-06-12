@@ -29,8 +29,6 @@ public class Server implements AutoCloseable {
     }
 
     public void start() {
-        System.out.println("Starting Java POC Server");
-
         try (TickEventGenerator ticker = new TickEventGenerator(queue, JavaServerMain.SERVER_TICK_FREQUENCY_MS);
                 IncomingConnectionListener socketServer = new IncomingConnectionListener(queue);
                 TaskOffload task = new TaskOffload(queue)) {

@@ -14,13 +14,15 @@ public class JavaServerMain {
     public static final int CLIENT_STALE_TIME_SECONDS = 20;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Java POC Server");
+
         try (Server server = new Server()) {
             addShutdownHook(server);
 
             server.start();
         }
 
-        System.out.println("Bye");
+        System.out.println("Java Server Ended");
     }
 
     private static void addShutdownHook(Server server) {

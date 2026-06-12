@@ -17,6 +17,18 @@ Sandbox project used for learning.
 * Java 25 JDK (e.g. Temurin JDK)
 * Clang
 
+## Tips
+
+Start multiple clients in auto chat mode:
+```
+time ( for i in {1..10}; do bazel-bin/java-client/main -a & done; wait )
+```
+
+Or redirect outputs to /dev/null
+```
+time ( for i in {1..50}; do bazel-bin/java-client/main -a &> /dev/null & done; wait )
+```
+
 ## Troubleshooting
 
 ### Java
