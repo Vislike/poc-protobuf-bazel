@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import poc.protocol.Chat.Message;
 import poc.server.JavaServerMain;
-import poc.server.event.ClientRemoveEvent;
 import poc.server.event.IEvent;
-import poc.server.event.UserIncomingEvent;
-import poc.server.event.UserOutgoingEvent;
+import poc.server.event.IEvent.ClientRemoveEvent;
+import poc.server.event.IEvent.UserIncomingEvent;
+import poc.server.event.IEvent.UserOutgoingEvent;
 import poc.server.util.Utils;
 
 public class RemoteClient implements AutoCloseable {
@@ -25,10 +25,10 @@ public class RemoteClient implements AutoCloseable {
     private final SocketChannel channel;
     private final BlockingQueue<IEvent> mainQueue;
     private final AtomicLong lastMessage;
-    private final AtomicBoolean run;
+    private final AtomicBoolean run = new AtomicBoolean(true);
+
     private Thread receiveThread;
     private Thread sendThread;
-    private ByteBuffer sendLengthBB = ByteBuffer.allocate(2);
 
     // Owned by main event thread
     public final BlockingQueue<IEvent> clientQueue;
@@ -40,7 +40,6 @@ public class RemoteClient implements AutoCloseable {
         this.channel = channel;
         this.mainQueue = mainQueue;
         this.lastMessage = new AtomicLong(Utils.tickMs());
-        this.run = new AtomicBoolean(true);
         this.clientQueue = new ArrayBlockingQueue<>(JavaServerMain.CLIENT_MESSAGE_QUEUE_SIZE);
     }
 
@@ -81,10 +80,11 @@ public class RemoteClient implements AutoCloseable {
 
     private void sendThread() {
         try {
+            ByteBuffer lengthBB = ByteBuffer.allocate(2);
             while (run.getOpaque()) {
                 IEvent event = clientQueue.take();
                 switch (event) {
-                    case UserOutgoingEvent e -> socketSend(e.sharedBB().asReadOnlyBuffer());
+                    case UserOutgoingEvent e -> socketSend(lengthBB, e.sharedBB().asReadOnlyBuffer());
                     default -> System.err.println("Unknown event: " + event);
                 }
             }
@@ -98,9 +98,9 @@ public class RemoteClient implements AutoCloseable {
         }
     }
 
-    private void socketSend(ByteBuffer bb) throws IOException {
-        sendLengthBB.clear().putShort((short) bb.capacity());
-        channel.write(sendLengthBB.rewind());
+    private void socketSend(ByteBuffer lengthBB, ByteBuffer bb) throws IOException {
+        lengthBB.clear().putShort((short) bb.capacity());
+        channel.write(lengthBB.rewind());
         channel.write(bb);
     }
 
@@ -112,8 +112,8 @@ public class RemoteClient implements AutoCloseable {
         }
     }
 
-    public boolean ageSeconds(int s) {
-        return lastMessage.getOpaque() + TimeUnit.SECONDS.toMillis(s) < Utils.tickMs();
+    public boolean ageSeconds(int s, long tickMs) {
+        return lastMessage.getOpaque() + TimeUnit.SECONDS.toMillis(s) < tickMs;
     }
 
     @Override

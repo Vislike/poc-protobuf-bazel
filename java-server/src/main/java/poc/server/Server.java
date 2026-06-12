@@ -1,19 +1,19 @@
 package poc.server;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import poc.protocol.Chat.Message;
-import poc.server.event.ClientAddEvent;
-import poc.server.event.ClientRemoveEvent;
 import poc.server.event.IEvent;
-import poc.server.event.ShutdownEvent;
-import poc.server.event.TickEvent;
-import poc.server.event.UserIncomingEvent;
-import poc.server.event.UserOutgoingEvent;
+import poc.server.event.IEvent.ClientAddEvent;
+import poc.server.event.IEvent.ClientRemoveEvent;
+import poc.server.event.IEvent.ShutdownEvent;
+import poc.server.event.IEvent.TickEvent;
+import poc.server.event.IEvent.UserIncomingEvent;
+import poc.server.event.IEvent.UserOutgoingEvent;
 import poc.server.thread.IncomingConnectionListener;
 import poc.server.thread.RemoteClient;
 import poc.server.thread.TaskOffload;
@@ -51,11 +51,11 @@ public class Server implements AutoCloseable {
             while (run) {
                 IEvent event = queue.take();
                 switch (event) {
+                    case ShutdownEvent _ -> run = false;
                     case TickEvent e -> tick(e, task);
                     case ClientAddEvent e -> clients.add(e.client());
                     case ClientRemoveEvent e -> disconnectWithNotify(e, task);
-                    case ShutdownEvent _ -> run = false;
-                    case UserIncomingEvent e -> chatEvent(e, task);
+                    case UserIncomingEvent e -> userMessage(e, task);
                     default -> System.err.println("Unknown event: " + event);
                 }
             }
@@ -64,58 +64,61 @@ public class Server implements AutoCloseable {
         }
     }
 
-    private void chatEvent(UserIncomingEvent event, TaskOffload task) {
+    private void userMessage(UserIncomingEvent event, TaskOffload task) {
         Message message = event.message();
         switch (message.getPayloadCase()) {
             case HELLO -> {
-                event.client().active = true;
                 event.client().userName = message.getHello().getUser().getUserName();
                 sendToActiveClients(ChatProtocol.systemConnected(event.client().userName), task);
+                event.client().active = true;
             }
             case CHAT -> {
-                sendToActiveClients(ChatProtocol.chat(message.getChat().getText(), event.client().userName), task);
+                if (event.client().active) {
+                    sendToActiveClients(ChatProtocol.chat(message.getChat().getText(), event.client().userName), task);
+                } else {
+                    task.loopbackAsync(new ClientRemoveEvent(event.client(), "Protocol violation"));
+                }
             }
-            default -> System.out.println("Unknown message: " + message);
+            default -> System.err.println("Unknown message: " + message);
         }
     }
 
     private void tick(TickEvent e, TaskOffload task) {
-        System.out.println("Got tick: " + e);
+        System.out.println("Tick: " + TimeUnit.MILLISECONDS.toSeconds(e.tickMs()));
 
         // Remove stale & ping old
         for (RemoteClient client : clients) {
-            if (client.ageSeconds(JavaServerMain.CLIENT_STALE_TIME_SECONDS)) {
+            if (client.ageSeconds(JavaServerMain.CLIENT_STALE_TIME_SECONDS, e.tickMs())) {
                 task.loopbackAsync(new ClientRemoveEvent(client, "Stale connection"));
-            } else if (client.ageSeconds(JavaServerMain.CLIENT_PING_TIME_SECONDS)) {
+            } else if (client.ageSeconds(JavaServerMain.CLIENT_PING_TIME_SECONDS, e.tickMs())) {
                 sendToClient(client, ChatProtocol.ping(), task);
             }
         }
     }
 
     private void sendToClient(RemoteClient client, Message message, TaskOffload task) {
-        ByteBuffer bb = ByteBuffer.wrap(message.toByteArray());
-        UserOutgoingEvent event = new UserOutgoingEvent(bb);
+        UserOutgoingEvent event = IEvent.createUserOutgoingEvent(message);
 
+        offerClientHandleFull(client, event, task);
+    }
+
+    private void sendToActiveClients(Message message, TaskOffload task) {
+        UserOutgoingEvent event = IEvent.createUserOutgoingEvent(message);
+
+        for (RemoteClient client : clients) {
+            if (client.active) {
+                offerClientHandleFull(client, event, task);
+            }
+        }
+    }
+
+    private void offerClientHandleFull(RemoteClient client, IEvent event, TaskOffload task) {
         if (!client.clientQueue.offer(event)) {
             task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
         }
     }
 
-    private void sendToActiveClients(Message message, TaskOffload task) {
-        ByteBuffer bb = ByteBuffer.wrap(message.toByteArray());
-        UserOutgoingEvent event = new UserOutgoingEvent(bb);
-
-        for (RemoteClient client : clients) {
-            if (client.active) {
-                if (!client.clientQueue.offer(event)) {
-                    task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
-                }
-            }
-        }
-    }
-
-    private void disconnectWithNotify(ClientRemoveEvent event, TaskOffload task)
-            throws InterruptedException {
+    private void disconnectWithNotify(ClientRemoveEvent event, TaskOffload task) {
         RemoteClient client = event.client();
 
         // Remove exactly one client from list if it still exists

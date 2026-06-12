@@ -2,14 +2,15 @@ package poc.server.thread;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import poc.server.JavaServerMain;
-import poc.server.event.ClientAddEvent;
 import poc.server.event.IEvent;
-import poc.server.event.ShutdownEvent;
+import poc.server.event.IEvent.ClientAddEvent;
+import poc.server.event.IEvent.ShutdownEvent;
 
 public class IncomingConnectionListener implements AutoCloseable {
 
@@ -29,8 +30,7 @@ public class IncomingConnectionListener implements AutoCloseable {
     private void handleIncomingConnection() {
         try (ServerSocketChannel channel = ServerSocketChannel.open()) {
             channel.configureBlocking(true);
-            InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                    JavaServerMain.SERVER_PORT);
+            SocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), JavaServerMain.SERVER_PORT);
             channel.bind(address);
             System.out.println("Listening on " + address);
 

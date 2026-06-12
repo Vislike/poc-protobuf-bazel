@@ -3,10 +3,11 @@ package poc.server.thread;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import poc.server.event.IEvent;
-import poc.server.event.TickEvent;
+import poc.server.event.IEvent.TickEvent;
 import poc.server.util.Utils;
 
 public class TickEventGenerator implements AutoCloseable {
@@ -18,8 +19,8 @@ public class TickEventGenerator implements AutoCloseable {
     public TickEventGenerator(BlockingQueue<IEvent> queue, long ms) {
         this.queue = queue;
         this.ms = ms;
-        executor = Executors
-                .newSingleThreadScheduledExecutor(Thread.ofVirtual().name("TickEventGeneratorThread").factory());
+        ThreadFactory factory = Thread.ofVirtual().name("TickEventGeneratorThread").factory();
+        executor = Executors.newSingleThreadScheduledExecutor(factory);
     }
 
     public void start() {
