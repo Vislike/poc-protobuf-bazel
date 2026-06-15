@@ -18,14 +18,20 @@ import poc.server.thread.IncomingConnectionListener;
 import poc.server.thread.RemoteClient;
 import poc.server.thread.TaskOffload;
 import poc.server.thread.TickEventGenerator;
+import poc.server.util.Utils;
 
 public class Server implements AutoCloseable {
 
     private final BlockingQueue<IEvent> queue;
     private final List<RemoteClient> clients = new ArrayList<>();
 
+    private long messagesSent = 0;
+    private long lastMessages = 0;
+    private long lastTick;
+
     public Server() {
         queue = new ArrayBlockingQueue<>(JavaServerMain.MAIN_MESSAGE_QUEUE_SIZE);
+        this.lastTick = Utils.tickMs();
     }
 
     public void start() {
@@ -82,7 +88,19 @@ public class Server implements AutoCloseable {
     }
 
     private void tick(TickEvent e, TaskOffload task) {
-        System.out.println("Tick: " + TimeUnit.MILLISECONDS.toSeconds(e.tickMs()));
+        // Some stats
+        long messages = messagesSent - lastMessages;
+        long elapsedMs = e.tickMs() - lastTick;
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("Tick: ").append(Utils.largeNumbers(TimeUnit.MILLISECONDS.toSeconds(e.tickMs())));
+        if (elapsedMs > 0) {
+            sb.append(", M/s: ").append(Utils.largeNumbers(messages * 1000 / elapsedMs));
+        }
+        sb.append(", Mess: ").append(Utils.largeNumbers(messages));
+        sb.append(", Tot: ").append(Utils.largeNumbers(messagesSent));
+        System.out.println(sb.toString());
+        lastMessages = messagesSent;
+        lastTick = e.tickMs();
 
         // Remove stale & ping old
         for (RemoteClient client : clients) {
@@ -111,7 +129,9 @@ public class Server implements AutoCloseable {
     }
 
     private void offerClientHandleFull(RemoteClient client, IEvent event, TaskOffload task) {
-        if (!client.clientQueue.offer(event)) {
+        if (client.clientQueue.offer(event)) {
+            messagesSent++;
+        } else {
             task.loopbackAsync(new ClientRemoveEvent(client, "Channel full"));
         }
     }
