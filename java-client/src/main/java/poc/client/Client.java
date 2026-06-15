@@ -38,8 +38,11 @@ public class Client implements AutoCloseable {
             // Ask for username
             System.out.print("Enter username: ");
             String userName = scanner.nextLine();
-            if (userName.length() < JavaClientMain.NAME_MIN_LENGTH) {
-                Terminal.redMessage("Please use a name with a least", JavaClientMain.NAME_MIN_LENGTH + " characters.");
+            if (userName.length() < JavaClientMain.NAME_MIN_LENGTH
+                    || userName.length() > JavaClientMain.NAME_MAX_LENGTH) {
+                Terminal.redMessage("Please use a name within " + JavaClientMain.NAME_MIN_LENGTH + "-"
+                        + JavaClientMain.NAME_MAX_LENGTH + " characters:",
+                        String.valueOf(userName.length()));
                 return;
             }
 

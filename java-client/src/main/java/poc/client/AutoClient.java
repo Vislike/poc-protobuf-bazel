@@ -1,8 +1,8 @@
 package poc.client;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import poc.client.event.IEvent;
 import poc.client.event.IEvent.ShutdownEvent;
@@ -16,8 +16,8 @@ public class AutoClient extends Client {
         Random random = new Random();
 
         // Start delay
-        long startDelay = random.nextLong(10000);
-        Terminal.chatOther("Random start delay", String.valueOf(startDelay));
+        long startDelay = random.nextLong(TimeUnit.SECONDS.toMillis(JavaClientMain.AUTO_STARTUP_DELAY_SEC));
+        Terminal.chatOther("Random start delay", String.valueOf(startDelay) + "ms");
         try {
             Thread.sleep(startDelay);
         } catch (InterruptedException e) {
@@ -26,7 +26,13 @@ public class AutoClient extends Client {
         }
 
         // Username
-        String userName = "Anon " + random.nextInt(1, 1000);
+        String userName = switch (random.nextInt(10)) {
+            case 0 -> "Alpha";
+            case 1 -> "Beta";
+            case 2 -> "Gamma";
+            case 3 -> "Omega";
+            default -> "Anon";
+        } + " " + random.nextInt(1, 1000);
 
         // Connect
         connect(userName);
@@ -38,7 +44,7 @@ public class AutoClient extends Client {
 
             // Handle server close
             Thread mainThread = Thread.currentThread();
-            Thread.ofPlatform().daemon(true).start(() -> {
+            Thread.ofPlatform().daemon(true).name("ShutdownMonitorThread").start(() -> {
                 try {
                     boolean run = true;
                     while (run) {
@@ -53,10 +59,17 @@ public class AutoClient extends Client {
                 mainThread.interrupt();
             });
 
+            // First random delay
+            long firstDelay = random.nextLong(TimeUnit.SECONDS.toMillis(JavaClientMain.AUTO_CHAT_DELAY_FIRST_SEC));
+            Terminal.chatOther("Random first delay", String.valueOf(firstDelay) + "ms");
+            Thread.sleep(firstDelay);
+
+            // Delay vars
+            int minDelay = Math.max(0, JavaClientMain.AUTO_CHAT_DELAY_MIN_MS);
+            int span = Math.max(0, JavaClientMain.AUTO_CHAT_DELAY_MAX_MS - JavaClientMain.AUTO_CHAT_DELAY_MIN_MS);
+
             // Simulate some chat
-            while (random.nextInt(50) > 0) {
-                // Delay before
-                Thread.sleep(Duration.ofSeconds(random.nextInt(10)));
+            while (random.nextInt(100) >= JavaClientMain.AUTO_DISCONNECT_CHANCE_PERCENT) {
 
                 // Random chat
                 send(ChatProtocol.chat(switch (random.nextInt(10)) {
@@ -73,7 +86,7 @@ public class AutoClient extends Client {
                 }));
 
                 // Delay after
-                Thread.sleep(Duration.ofSeconds(random.nextInt(20)));
+                Thread.sleep(random.nextInt(span + 1) + minDelay);
             }
             Thread.sleep(1000);
         } catch (InterruptedException _) {

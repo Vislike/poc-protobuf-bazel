@@ -21,12 +21,12 @@ Sandbox project used for learning.
 
 Start multiple clients in auto chat mode:
 ```
-time ( for i in {1..10}; do bazel-bin/java-client/main -a & done; wait )
+time ( for i in {1..10}; do bazel-bin/java-client/java-client -a & done; wait )
 ```
 
-Or redirect outputs to /dev/null
+JVM likes to eat a lot of memory, and my testing suggests about 50mb minimum, but it will grab and hold on to more if it is allowed to, so to run a lot of clients i suggests capping memory and redirect output to /dev/null
 ```
-time ( for i in {1..50}; do bazel-bin/java-client/main -a &> /dev/null & done; wait )
+time ( for i in {1..200}; do bazel-bin/java-client/java-client --jvm_flag=-Xmx8m -a &> /dev/null & done; wait )
 ```
 
 ## Troubleshooting

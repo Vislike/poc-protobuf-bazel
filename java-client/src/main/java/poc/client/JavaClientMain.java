@@ -8,7 +8,14 @@ import poc.client.util.Terminal;
 public class JavaClientMain {
 
     public static final int NAME_MIN_LENGTH = 2;
+    public static final int NAME_MAX_LENGTH = 20;
     public static final long TERMINAL_SLEEP_TIME_MS = 50;
+
+    public static final int AUTO_STARTUP_DELAY_SEC = 30;
+    public static final int AUTO_DISCONNECT_CHANCE_PERCENT = 2;
+    public static final int AUTO_CHAT_DELAY_FIRST_SEC = 10;
+    public static final int AUTO_CHAT_DELAY_MIN_MS = 1000;
+    public static final int AUTO_CHAT_DELAY_MAX_MS = 30000;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Java POC Client");
