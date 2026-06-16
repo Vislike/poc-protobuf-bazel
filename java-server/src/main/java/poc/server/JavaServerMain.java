@@ -6,11 +6,11 @@ public class JavaServerMain {
 
     public static final int SERVER_PORT = 5000;
     public static final int SERVER_TICK_FREQUENCY_MS = 5000;
-    public static final int MAIN_MESSAGE_QUEUE_SIZE = 256;
+    public static final int MAIN_MESSAGE_QUEUE_SIZE = 128;
     public static final int SHUTDOWN_SECONDS_MAX = 5;
 
-    public static final int CLIENT_MESSAGE_QUEUE_SIZE = 8192;
-    public static final int CLIENT_PING_TIME_SECONDS = 10;
+    public static final int CLIENT_MESSAGE_QUEUE_SIZE = 2048;
+    public static final int CLIENT_PING_TIME_SECONDS = 30;
     public static final int CLIENT_STALE_TIME_SECONDS = 120;
 
     public static void main(String[] args) throws Exception {

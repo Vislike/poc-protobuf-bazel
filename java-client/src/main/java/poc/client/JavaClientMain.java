@@ -15,7 +15,7 @@ public class JavaClientMain {
     public static final int AUTO_DISCONNECT_CHANCE_PERCENT = 0;
     public static final int AUTO_CHAT_DELAY_FIRST_SEC = 30;
     public static final int AUTO_CHAT_DELAY_MIN_MS = 1;
-    public static final int AUTO_CHAT_DELAY_MAX_MS = 100;
+    public static final int AUTO_CHAT_DELAY_MAX_MS = 200;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Java POC Client");
