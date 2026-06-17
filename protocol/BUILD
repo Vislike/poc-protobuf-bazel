@@ -1,5 +1,6 @@
 load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@protobuf//bazel:java_proto_library.bzl", "java_proto_library")
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 
 proto_library(
     name = "chat_proto",
@@ -8,6 +9,12 @@ proto_library(
 
 java_proto_library(
     name = "java_chat_proto",
+    deps = [":chat_proto"],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "cc_chat_proto",
     deps = [":chat_proto"],
     visibility = ["//visibility:public"],
 )

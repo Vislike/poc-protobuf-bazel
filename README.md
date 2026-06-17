@@ -20,6 +20,7 @@ Sandbox project used for learning.
 * Java 25 JDK (e.g. Temurin JDK)
 * Clang
   * Clangd
+  * Clang-tidy
 
 ## Tips
 

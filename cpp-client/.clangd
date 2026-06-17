@@ -1,0 +1,9 @@
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+  ClangTidy:
+    Add: [
+      bugprone-*,
+      performance-*,
+      modernize-*,
+    ]
