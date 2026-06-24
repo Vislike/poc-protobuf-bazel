@@ -1,35 +1,19 @@
+#include "Client.h"
+
+#include "protocol/chat.pb.h"
+
+#include <cerrno>
 #include <cstdint>
 #include <cstring>
-#include <ctime>
-#include <errno.h>
 #include <iostream>
 #include <netinet/in.h>
-#include <ostream>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "protocol/chat.pb.h"
-
 using namespace poc::protocol;
 
-std::string get_greet(const std::string &who) { return "Hello " + who; }
-
-void print_localtime() {
-    std::time_t result = std::time(nullptr);
-    std::cout << std::asctime(std::localtime(&result));
-}
-
-int main(int argc, char **argv) {
-    std::cout << "C++ POC Client\n";
-    std::string who = "world 2";
-    if (argc > 1) {
-        who = argv[1];
-    }
-
-    std::cout << get_greet(who) << '\n';
-    print_localtime();
-
+void Client::start() {
     Message mess;
     ChatMessage *chat = mess.mutable_chat();
     chat->mutable_user()->set_username("TestUser");
@@ -50,7 +34,7 @@ int main(int argc, char **argv) {
 
     if (result != 0) {
         std::cout << "Error connecting: " << strerror(errno) << '\n';
-        return 1;
+        return;
     }
 
     Message hello;
@@ -68,8 +52,4 @@ int main(int argc, char **argv) {
     send(clientSocket, chatStr.data(), chatStr.size(), 0);
 
     close(clientSocket);
-
-    std::cout << "C++ Client Ended\n" << std::flush;
-
-    return 0;
 }

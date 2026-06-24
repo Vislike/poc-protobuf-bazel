@@ -8,7 +8,7 @@ refresh_compile_commands(
 
 cc_binary(
     name = "cpp-client",
-    srcs = ["hello-world.cc"],
+    srcs = glob(["src/**/*.cpp","src/**/*.h"]),
     cxxopts = ["-Wall", "-Wextra", "-Werror", "-Wconversion", "-Wsign-conversion", "-Wshadow", "-Wunused", "-Wnon-virtual-dtor", "-Wold-style-cast"],
     deps = ["//protocol:cc_chat_proto"],
 )
