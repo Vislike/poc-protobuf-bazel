@@ -1,6 +1,7 @@
 #include "Client.h"
 
 #include "protocol/chat.pb.h"
+#include "thread/ReceiveThread.h"
 
 #include <cerrno>
 #include <cstdint>
@@ -36,20 +37,23 @@ void Client::start() {
         std::cout << "Error connecting: " << strerror(errno) << '\n';
         return;
     }
+    {
+        thread::ReceiveThread receiveThread{clientSocket};
+        receiveThread.start();
 
-    Message hello;
-    hello.mutable_hello()->mutable_user()->set_username("C++ Client");
-    std::string helloStr = hello.SerializeAsString();
+        Message hello;
+        hello.mutable_hello()->mutable_user()->set_username("C++ Client");
+        std::string helloStr = hello.SerializeAsString();
 
-    uint16_t length = htons(static_cast<uint16_t>(helloStr.size()));
-    send(clientSocket, &length, sizeof(length), 0);
-    send(clientSocket, helloStr.data(), helloStr.size(), 0);
+        uint16_t length = htons(static_cast<uint16_t>(helloStr.size()));
+        send(clientSocket, &length, sizeof(length), 0);
+        send(clientSocket, helloStr.data(), helloStr.size(), 0);
 
-    std::string chatStr = mess.SerializeAsString();
-    length = htons(static_cast<uint16_t>(chatStr.size()));
+        std::string chatStr = mess.SerializeAsString();
+        length = htons(static_cast<uint16_t>(chatStr.size()));
 
-    send(clientSocket, &length, sizeof(length), 0);
-    send(clientSocket, chatStr.data(), chatStr.size(), 0);
-
+        send(clientSocket, &length, sizeof(length), 0);
+        send(clientSocket, chatStr.data(), chatStr.size(), 0);
+    }
     close(clientSocket);
 }

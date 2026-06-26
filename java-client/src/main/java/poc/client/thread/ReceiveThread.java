@@ -34,7 +34,7 @@ public class ReceiveThread implements AutoCloseable {
         thread = Thread.ofPlatform().name("ReceiveThread").start(this::receiveThread);
     }
 
-    public void receiveThread() {
+    private void receiveThread() {
         try {
             ByteBuffer lengthBB = ByteBuffer.allocate(2);
             while (run.getOpaque()) {

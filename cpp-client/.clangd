@@ -6,6 +6,7 @@ Diagnostics:
       bugprone-*,
       performance-*,
       modernize-*,
+      cppcoreguidelines-pro-type-member-init,
     ]
     Remove: [
       modernize-use-trailing-return-type
