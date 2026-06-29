@@ -3,57 +3,65 @@
 #include "protocol/chat.pb.h"
 #include "thread/ReceiveThread.h"
 
-#include <cerrno>
 #include <cstdint>
-#include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
-#include <unistd.h>
 
 using namespace poc::protocol;
 
 void Client::start() {
-    Message mess;
-    ChatMessage *chat = mess.mutable_chat();
-    chat->mutable_user()->set_username("TestUser");
-    chat->set_text("Test chat message");
+    // Setup socket
+    socketFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socketFd < 0) {
+        perror("socket");
+        return;
+    }
 
-    std::cout << mess.DebugString() << '\n';
-
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    // Connect to localhost
     sockaddr_in serverAddress{};
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(5000);
     serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     std::cout << "Connecting..." << '\n';
-    int result =
-        connect(clientSocket, reinterpret_cast<sockaddr *>(&serverAddress),
-                sizeof(serverAddress));
-
-    if (result != 0) {
-        std::cout << "Error connecting: " << strerror(errno) << '\n';
+    if (connect(socketFd, reinterpret_cast<sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0) {
+        perror("connect");
         return;
     }
-    {
-        thread::ReceiveThread receiveThread{clientSocket};
-        receiveThread.start();
 
-        Message hello;
-        hello.mutable_hello()->mutable_user()->set_username("C++ Client");
-        std::string helloStr = hello.SerializeAsString();
+    // Start receive thread
+    thread::ReceiveThread receiveThread{socketFd, *this};
+    receiveThread.start();
 
-        uint16_t length = htons(static_cast<uint16_t>(helloStr.size()));
-        send(clientSocket, &length, sizeof(length), 0);
-        send(clientSocket, helloStr.data(), helloStr.size(), 0);
+    // Test messages
+    Message hello;
+    hello.mutable_hello()->mutable_user()->set_username("C++ Client");
+    send(hello);
 
-        std::string chatStr = mess.SerializeAsString();
-        length = htons(static_cast<uint16_t>(chatStr.size()));
+    Message mess;
+    ChatMessage *chat = mess.mutable_chat();
+    chat->mutable_user()->set_username("TestUser");
+    chat->set_text("Test chat message");
+    std::cout << mess.DebugString() << '\n';
 
-        send(clientSocket, &length, sizeof(length), 0);
-        send(clientSocket, chatStr.data(), chatStr.size(), 0);
+    send(mess);
+}
+
+bool Client::send(const Message &message) {
+    std::string msgStr = message.SerializeAsString();
+
+    uint16_t length = htons(static_cast<uint16_t>(msgStr.size()));
+    if (::send(socketFd, &length, sizeof(length), 0) < 0) {
+        perror("send length");
+        return false;
     }
-    close(clientSocket);
+    if (::send(socketFd, msgStr.data(), msgStr.size(), 0) < 0) {
+        perror("send message");
+        return false;
+    }
+
+    return true;
 }
