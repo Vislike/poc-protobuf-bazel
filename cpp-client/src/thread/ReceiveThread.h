@@ -3,6 +3,7 @@
 #include "Client.h"
 #include "protocol/chat.pb.h"
 
+#include <atomic>
 #include <string>
 #include <thread>
 
@@ -10,8 +11,9 @@ namespace thread {
 
 class ReceiveThread {
     int socketFd;
-    Client &client;
+    client::Client &client;
 
+    std::atomic_bool run{true};
     std::thread thread;
     std::string receiveBuffer;
 
@@ -20,8 +22,7 @@ class ReceiveThread {
     bool event(const poc::protocol::Message &message);
 
   public:
-    ReceiveThread(int socketFd, Client &client) : socketFd(socketFd), client(client) {}
-
+    ReceiveThread(int socketFd, client::Client &client) : socketFd(socketFd), client(client) {}
     ~ReceiveThread() {
         if (thread.joinable()) {
             thread.join();
@@ -29,6 +30,7 @@ class ReceiveThread {
     }
 
     void start();
+    void stop();
 };
 
 } // namespace thread

@@ -9,7 +9,7 @@ refresh_compile_commands(
 cc_binary(
     name = "cpp-client",
     srcs = glob(["src/**/*.cpp","src/**/*.h"]),
-    copts = ["-Wall", "-Wextra", "-Werror", "-Wconversion", "-Wsign-conversion", "-Wshadow", "-Wunused", "-Wnon-virtual-dtor", "-Wold-style-cast"],
+    copts = ["-std=c++20", "-Wall", "-Wextra", "-Werror", "-Wconversion", "-Wsign-conversion", "-Wshadow", "-Wunused", "-Wimplicit-fallthrough", "-Wnon-virtual-dtor", "-Wold-style-cast"],
     deps = ["//protocol:cc_chat_proto"],
     includes = ["src"],
 )

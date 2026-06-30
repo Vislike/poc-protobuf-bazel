@@ -6,32 +6,43 @@
 #include <cstdio>
 #include <iostream>
 #include <netinet/in.h>
+#include <signal.h> // NOLINT(modernize-deprecated-headers)
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
 
-using namespace poc::protocol;
-
 namespace thread {
 
-void ReceiveThread::start() {
-    std::cout << "Starting receive thread\n";
+using namespace poc::protocol;
 
-    thread = std::thread(&ReceiveThread::receiveThread, this);
+void ReceiveThread::start() { thread = std::thread(&ReceiveThread::receiveThread, this); }
+
+void ReceiveThread::stop() {
+    if (run.load()) {
+        std::cout << "Stopping receive thread\n";
+        run.store(false);
+        pthread_kill(thread.native_handle(), SIGUSR1);
+    }
 }
 
 void ReceiveThread::receiveThread() {
     // Receive loop
     Message message;
-    while (true) {
+    while (run.load()) {
         if (!receive(message)) {
-            return;
+            break;
         }
 
         if (!event(message)) {
-            return;
+            break;
         }
+    }
+
+    // If not stopped gracefully, signal main thread
+    if (run.load()) {
+        run.store(false);
+        client.stop();
     }
 }
 
@@ -59,10 +70,10 @@ bool ReceiveThread::event(const Message &message) {
     case Message::kPing: {
         Message pong;
         pong.mutable_pong();
-        client.send(pong);
-    } break;
+        return client.send(pong);
+    }
     default:
-        std::cout << "Unknown message: " << message.DebugString();
+        std::cerr << "Unknown message: " << message.DebugString();
         return false;
     }
     return true;
@@ -76,7 +87,7 @@ bool ReceiveThread::receive(Message &outMessage) {
         perror("recv length");
         return false;
     } else if (result != 2) {
-        std::cout << "Server closed connection\n";
+        std::cerr << "Server closed connection\n";
         return false;
     }
     uint16_t length = ntohs(networkLength);
@@ -90,7 +101,7 @@ bool ReceiveThread::receive(Message &outMessage) {
             perror("recv message");
             return false;
         } else if (result == 0) {
-            std::cout << "Server closed connection\n";
+            std::cerr << "Server closed connection\n";
             return false;
         }
         bytesReceived += static_cast<size_t>(result);
