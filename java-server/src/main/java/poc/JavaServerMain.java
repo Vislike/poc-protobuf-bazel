@@ -1,6 +1,8 @@
-package poc.server;
+package poc;
 
 import java.time.Duration;
+
+import poc.server.Server;
 
 public class JavaServerMain {
 

@@ -4,12 +4,19 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import poc.JavaClientMain;
 import poc.client.event.IEvent;
 import poc.client.event.IEvent.ShutdownEvent;
 import poc.client.thread.ReceiveThread;
 import poc.client.util.Terminal;
 
 public class AutoClient extends Client {
+
+    private final boolean testMaxLength;
+
+    public AutoClient(boolean testMaxLength) {
+        this.testMaxLength = testMaxLength;
+    }
 
     @Override
     public void start() throws IOException {
@@ -59,6 +66,11 @@ public class AutoClient extends Client {
                 mainThread.interrupt();
             });
 
+            // Max length test
+            if (testMaxLength) {
+                testMaxLength();
+            }
+
             // First random delay
             long firstDelay = random.nextLong(TimeUnit.SECONDS.toMillis(JavaClientMain.AUTO_CHAT_DELAY_FIRST_SEC));
             Terminal.chatOther("Random first delay", String.valueOf(firstDelay) + "ms");
@@ -92,5 +104,27 @@ public class AutoClient extends Client {
         } catch (InterruptedException _) {
             // Ignore in auto mode
         }
+    }
+
+    private void testMaxLength() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        char c = '1';
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 10000; j++) {
+                sb.append(c);
+            }
+            c++;
+        }
+        String message = sb.toString();
+        short value = (short) message.length();
+        Terminal.systemMessage("""
+
+                Message Max length test:
+                  Message length: %d
+                  Short value: %d
+                  Short max: %d
+                  Unsigned short value: %d
+                """.formatted(message.length(), value, Short.MAX_VALUE, Short.toUnsignedInt(value)));
+        send(ChatProtocol.chat(message));
     }
 }

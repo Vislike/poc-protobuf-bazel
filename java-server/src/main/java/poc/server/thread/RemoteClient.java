@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import poc.JavaServerMain;
 import poc.protocol.Chat.Message;
-import poc.server.JavaServerMain;
 import poc.server.event.IEvent;
 import poc.server.event.IEvent.ClientRemoveEvent;
 import poc.server.event.IEvent.UserIncomingEvent;

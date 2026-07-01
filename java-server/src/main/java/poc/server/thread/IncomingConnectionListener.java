@@ -7,7 +7,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import poc.server.JavaServerMain;
+import poc.JavaServerMain;
 import poc.server.event.IEvent;
 import poc.server.event.IEvent.ClientAddEvent;
 import poc.server.event.IEvent.ShutdownEvent;

@@ -49,7 +49,7 @@ public class ReceiveThread implements AutoCloseable {
                 Message message = Message.parseFrom(msgBB.rewind());
                 chatMessage(message);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (run.getOpaque()) {
                 mainQueue.add(new ShutdownEvent());
                 switch (e) {

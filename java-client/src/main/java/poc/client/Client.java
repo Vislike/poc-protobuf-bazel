@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import poc.JavaClientMain;
 import poc.client.event.IEvent;
 import poc.client.event.IEvent.PingEvent;
 import poc.client.event.IEvent.ShutdownEvent;

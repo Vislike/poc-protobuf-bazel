@@ -6,6 +6,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import poc.JavaServerMain;
 import poc.protocol.Chat.Message;
 import poc.server.event.IEvent;
 import poc.server.event.IEvent.ClientAddEvent;

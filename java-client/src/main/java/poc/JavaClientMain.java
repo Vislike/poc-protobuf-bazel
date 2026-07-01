@@ -1,8 +1,10 @@
-package poc.client;
+package poc;
 
 import java.io.IOException;
 import java.util.Optional;
 
+import poc.client.AutoClient;
+import poc.client.Client;
 import poc.client.util.Terminal;
 
 public class JavaClientMain {
@@ -36,15 +38,24 @@ public class JavaClientMain {
     }
 
     private static Optional<Client> createClient(String[] args) {
-        if (args.length > 0) {
-            if (args[0].equals("-a") || args[0].equals("--auto")) {
-                return Optional.of(new AutoClient());
-            } else {
-                Terminal.redMessage("Unknown argument",
-                        "run without for interactive, or --auto (-a) for auto mode.");
-                return Optional.empty();
+        boolean auto = false;
+        boolean max = false;
+
+        for (String arg : args) {
+            switch (arg.toLowerCase()) {
+                case "-a", "--auto" -> auto = true;
+                case "-m", "--max" -> max = true;
+                default -> {
+                    Terminal.redMessage("Unknown argument", arg);
+                    Terminal.systemMessage("""
+                            Help:
+                            <no arg>       Interactive mode
+                            --auto (-a)    Auto chat mode.
+                            --max (-m)     Test send max length chat message. (Require -a)""");
+                    return Optional.empty();
+                }
             }
         }
-        return Optional.of(new Client());
+        return Optional.of(auto ? new AutoClient(max) : new Client());
     }
 }
