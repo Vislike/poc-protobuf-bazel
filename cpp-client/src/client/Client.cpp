@@ -80,10 +80,10 @@ bool Client::connect(std::string userName) {
     }
 
     // Connect to localhost
-    std::cout << "Connecting to localhost:5000\n";
+    std::cout << "Connecting to localhost:" << constants::Port << '\n';
     sockaddr_in serverAddress{};
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(5000);
+    serverAddress.sin_port = htons(constants::Port);
     serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     if (::connect(socketFd, reinterpret_cast<sockaddr *>(&serverAddress), sizeof(serverAddress)) < 0) {

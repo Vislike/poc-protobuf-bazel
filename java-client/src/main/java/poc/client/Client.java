@@ -86,8 +86,8 @@ public class Client implements AutoCloseable {
     }
 
     protected void connect(String userName) throws IOException {
-        Terminal.systemMessage("Connecting to localhost:5000");
-        channel = SocketChannel.open(new InetSocketAddress(InetAddress.getLoopbackAddress(), 5000));
+        Terminal.systemMessage("Connecting to localhost:" + JavaClientMain.PORT);
+        channel = SocketChannel.open(new InetSocketAddress(InetAddress.getLoopbackAddress(), JavaClientMain.PORT));
 
         send(ChatProtocol.hello(userName));
     }

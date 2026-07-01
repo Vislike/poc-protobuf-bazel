@@ -9,9 +9,9 @@ import poc.client.util.Terminal;
 
 public class JavaClientMain {
 
+    public static final int PORT = 5000;
     public static final int NAME_MIN_LENGTH = 2;
     public static final int NAME_MAX_LENGTH = 20;
-    public static final long TERMINAL_SLEEP_TIME_MS = 50;
 
     public static final int AUTO_STARTUP_DELAY_SEC = 60;
     public static final int AUTO_DISCONNECT_CHANCE_PERCENT = 0;

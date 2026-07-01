@@ -10,6 +10,7 @@ Sandbox project used for learning.
   * Generate necessary files from .proto
 
 ### Setup
+* Ubuntu LTS in WSL
 * VSCodium
   * Extension Pack for Java
   * vscode-proto3
@@ -23,6 +24,12 @@ Sandbox project used for learning.
   * Clang-tidy
 
 ## Tips
+
+### Build all
+
+```
+bazel build //...
+```
 
 ### Java
 
@@ -50,5 +57,12 @@ bazel run //cpp-client:refresh_compile_commands
 **Problem**  
 The import poc.protocol cannot be resolved  
 **Solution**  
-Do a bazel build `bazel build //...` and Reload workspace:  
-Ctrl+Shift+P `Developer: Reload Window` or `Java: Clean Java Language Server Workspace`
+Build one of the java projects `bazel build java-server` or `bazel build java-client` and Reload Workspace:  
+Ctrl+Shift+P `Developer: Reload Window` or `Java: Clean Java Language Server Workspace`.
+
+### C++
+
+**Problem**  
+'protocol/chat.pb.h' file not found  
+**Solution**  
+Build C++ project `bazel build cpp-client` and refresh compile commands `bazel run cpp-client:refresh_compile_commands`.
