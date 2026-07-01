@@ -45,14 +45,6 @@ void Client::start() {
     receiveThread.stop();
 }
 
-void Client::stop() {
-    if (run.load()) {
-        std::cout << "Stopping main thread\n";
-        run.store(false);
-        pthread_kill(threadNativeHandle, SIGUSR1);
-    }
-}
-
 void Client::chatLoop() {
     std::unordered_set<std::string> stop = {"/q", "/quit", "/e", "/exit"};
     Message chatMessage;
@@ -119,6 +111,14 @@ bool Client::send(const Message &message) {
     }
 
     return true;
+}
+
+void Client::stop() {
+    if (run.load()) {
+        std::cout << "Stopping main thread\n";
+        run.store(false);
+        pthread_kill(threadNativeHandle, SIGUSR1);
+    }
 }
 
 } // namespace client

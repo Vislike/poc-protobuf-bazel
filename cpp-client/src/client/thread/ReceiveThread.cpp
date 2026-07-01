@@ -18,14 +18,6 @@ using namespace poc::protocol;
 
 void ReceiveThread::start() { thread = std::thread(&ReceiveThread::receiveThread, this); }
 
-void ReceiveThread::stop() {
-    if (run.load()) {
-        std::cout << "Stopping receive thread\n";
-        run.store(false);
-        pthread_kill(thread.native_handle(), SIGUSR1);
-    }
-}
-
 void ReceiveThread::receiveThread() {
     // Receive loop
     Message message;
@@ -115,6 +107,14 @@ bool ReceiveThread::receive(Message &outMessage) {
         return false;
     }
     return true;
+}
+
+void ReceiveThread::stop() {
+    if (run.load()) {
+        std::cout << "Stopping receive thread\n";
+        run.store(false);
+        pthread_kill(thread.native_handle(), SIGUSR1);
+    }
 }
 
 } // namespace thread

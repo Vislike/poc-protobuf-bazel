@@ -1,9 +1,11 @@
-#include "Client.h"
+#include "client/Client.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <signal.h> // NOLINT(modernize-deprecated-headers)
+
+namespace {
 
 void sigHandler([[maybe_unused]] int signum) {}
 
@@ -19,6 +21,8 @@ bool installSigUsr1() {
 
     return true;
 }
+
+} // namespace
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     std::cout << "C++ POC Client\n";
